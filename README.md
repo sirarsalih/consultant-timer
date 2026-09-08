@@ -89,7 +89,7 @@ Both formats are displayed at the same time:
 - Local data is stored under `%LOCALAPPDATA%\ConsultantTimer`.
 - Designed specifically as a minimal daily consultant work timer rather than a project-management or timesheet platform.
 
-## Windows SmartScreen / code signing
+## Windows SmartScreen/code signing
 
 Consultant Timer is currently **not digitally signed with a trusted Windows code-signing certificate**. Because of this, Windows SmartScreen may display an **Unknown publisher** or security warning when launching the application.
 
