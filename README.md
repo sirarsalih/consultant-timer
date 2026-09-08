@@ -1,6 +1,6 @@
-# ConsultantTimer
+# Consultant Timer
 
-ConsultantTimer is a lightweight, local-first Windows desktop application for simple daily consultant time tracking.
+Consultant Timer is a lightweight, local-first Windows desktop application for simple daily consultant time tracking.
 
 ## Features
 
@@ -41,9 +41,9 @@ Both formats are displayed at the same time:
 
 - Includes a **“Start automatically when Windows starts”** checkbox.
 - Checkbox and text are centered in the interface.
-- Automatic startup can be enabled or disabled directly from ConsultantTimer.
+- Automatic startup can be enabled or disabled directly from Consultant Timer.
 - Uses the current Windows user's startup configuration.
-- When Windows starts, ConsultantTimer launches **paused** rather than automatically counting time.
+- When Windows starts, Consultant Timer launches **paused** rather than automatically counting time.
 - The startup preference is remembered.
 
 ### Windows interface
@@ -60,7 +60,7 @@ Both formats are displayed at the same time:
 
 ### System tray
 
-- ConsultantTimer includes a Windows system-tray icon.
+- Consultant Timer includes a Windows system-tray icon.
 - Right-clicking the tray icon provides:
   - **Start**
   - **Pause**
@@ -72,7 +72,7 @@ Both formats are displayed at the same time:
 
 ### Application icon
 
-- Custom ConsultantTimer clock/timer icon.
+- Custom Consultant Timer clock/timer icon.
 - Embedded directly into the Windows executable.
 - Used as the `.exe` and desktop icon.
 - Used in the application title bar.
@@ -91,6 +91,6 @@ Both formats are displayed at the same time:
 
 ## Windows SmartScreen / code signing
 
-ConsultantTimer is currently **not digitally signed with a trusted Windows code-signing certificate**. Because of this, Windows SmartScreen may display an **Unknown publisher** or security warning when launching the application.
+Consultant Timer is currently **not digitally signed with a trusted Windows code-signing certificate**. Because of this, Windows SmartScreen may display an **Unknown publisher** or security warning when launching the application.
 
-This does not indicate that ConsultantTimer requires internet access or sends data externally. To provide normal trusted-publisher verification and reduce SmartScreen warnings for distributed builds, the executable should be signed with a trusted Windows code-signing certificate.
+This does not indicate that Consultant Timer requires internet access or sends data externally. To provide normal trusted-publisher verification and reduce SmartScreen warnings for distributed builds, the executable should be signed with a trusted Windows code-signing certificate.
