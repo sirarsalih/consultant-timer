@@ -175,6 +175,7 @@ var (
 	procGetCursorPos        = user32.NewProc("GetCursorPos")
 	procSetForegroundWindow = user32.NewProc("SetForegroundWindow")
 	procIsWindowVisible     = user32.NewProc("IsWindowVisible")
+	procInvalidateRect      = user32.NewProc("InvalidateRect")
 	procSetClassLongPtrW    = user32.NewProc("SetClassLongPtrW")
 
 	procSetTextColor           = gdi32.NewProc("SetTextColor")
@@ -203,7 +204,7 @@ var (
 	procRegCloseKey     = advapi32.NewProc("RegCloseKey")
 
 	hwndMain, hwndClock, hwndDecimal, hwndStatus syscall.Handle
-	hwndStart, hwndPause, hwndStop, hwndStartup  syscall.Handle
+	hwndStart, hwndStop, hwndStartup             syscall.Handle
 	normalFont, bigFont                          syscall.Handle
 	appIcon                                      syscall.Handle
 	appIconOwned                                 bool
@@ -215,6 +216,7 @@ var (
 	running        bool
 	lastTick       time.Time
 	sessionAdded   float64
+	autoIdlePaused bool
 	dataPath       string
 )
 
@@ -368,7 +370,7 @@ func idleSeconds() float64 {
 		return 0
 	}
 	tick, _, _ := procGetTickCount64.Call()
-	elapsedMs := uint64(tick) - uint64(lii.DwTime)
+	elapsedMs := uint32(tick) - lii.DwTime
 	return float64(elapsedMs) / 1000.0
 }
 func ensureDate(now time.Time) {
@@ -384,9 +386,13 @@ func ensureDate(now time.Time) {
 	updateDisplay()
 }
 func updateButtons() {
-	enable(hwndStart, !running)
-	enable(hwndPause, running)
+	// START and PAUSE share one owner-drawn button. It stays enabled and
+	// changes text/color based on the current running state.
+	enable(hwndStart, true)
 	enable(hwndStop, running || currentSeconds > 0)
+	if hwndStart != 0 {
+		procInvalidateRect.Call(uintptr(hwndStart), 0, 1)
+	}
 }
 func startTimer() {
 	if running {
@@ -394,6 +400,7 @@ func startTimer() {
 	}
 	ensureDate(time.Now())
 	running = true
+	autoIdlePaused = false
 	lastTick = time.Now()
 	sessionAdded = 0
 	setText(hwndStatus, "Working")
@@ -406,6 +413,7 @@ func pauseTimer(status string) {
 	}
 	tick(time.Now(), false)
 	running = false
+	autoIdlePaused = false
 	saveStore()
 	setText(hwndStatus, status)
 	updateButtons()
@@ -416,6 +424,7 @@ func stopAndClear() {
 		tick(time.Now(), false)
 	}
 	running = false
+	autoIdlePaused = false
 	currentSeconds = 0
 	sessionAdded = 0
 	store.Days[currentDate] = 0
@@ -427,9 +436,23 @@ func stopAndClear() {
 }
 func tick(now time.Time, checkIdle bool) {
 	ensureDate(now)
+
+	// If the timer was paused automatically due to inactivity, resume it
+	// as soon as Windows reports fresh keyboard/mouse input. Manual pauses
+	// never enter this state and therefore never auto-resume.
 	if !running {
+		if checkIdle && autoIdlePaused && idleSeconds() < 2 {
+			running = true
+			autoIdlePaused = false
+			lastTick = now
+			sessionAdded = 0
+			setText(hwndStatus, "Working - resumed after idle")
+			updateButtons()
+			updateDisplay()
+		}
 		return
 	}
+
 	dt := now.Sub(lastTick).Seconds()
 	if dt < 0 {
 		dt = 0
@@ -448,6 +471,7 @@ func tick(now time.Time, checkIdle bool) {
 			currentSeconds = math.Max(0, currentSeconds-remove)
 			sessionAdded = math.Max(0, sessionAdded-remove)
 			running = false
+			autoIdlePaused = true
 			saveStore()
 			setText(hwndStatus, fmt.Sprintf("Paused automatically - idle %.0f min", math.Floor(idle/60)))
 			updateButtons()
@@ -463,12 +487,14 @@ func drawButton(dis *DRAWITEMSTRUCT) {
 	var textColor uintptr = rgb(255, 255, 255)
 	text := ""
 	if dis.CtlID == ID_START {
-		fill = rgb(34, 139, 34)
-		text = "START"
-	} else if dis.CtlID == ID_PAUSE {
-		fill = rgb(245, 196, 48)
-		text = "PAUSE"
-		textColor = rgb(30, 30, 30)
+		if running {
+			fill = rgb(245, 196, 48)
+			text = "PAUSE"
+			textColor = rgb(30, 30, 30)
+		} else {
+			fill = rgb(34, 139, 34)
+			text = "START"
+		}
 	} else if dis.CtlID == ID_STOP {
 		fill = rgb(196, 48, 43)
 		text = "STOP"
@@ -624,7 +650,14 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch loword(wParam) {
-		case ID_START, ID_TRAY_START:
+		case ID_START:
+			if running {
+				pauseTimer("Paused")
+			} else {
+				startTimer()
+			}
+			return 0
+		case ID_TRAY_START:
 			startTimer()
 			return 0
 		case ID_PAUSE, ID_TRAY_PAUSE:
@@ -700,7 +733,7 @@ func main() {
 		appIcon = createClockIcon()
 		appIconOwned = appIcon != 0
 	}
-	className := utf16("ConsultantTimerWindowV61")
+	className := utf16("ConsultantTimerWindowV7")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: instance, HIcon: appIcon, HCursor: syscall.Handle(cursor), HbrBackground: syscall.Handle(COLOR_WINDOW + 1), LpszClassName: className, HIconSm: appIcon}
 	if r, _, _ := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
@@ -708,7 +741,7 @@ func main() {
 	}
 
 	style := uint32(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE)
-	hwndMain = createWindow("ConsultantTimerWindowV61", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
+	hwndMain = createWindow("ConsultantTimerWindowV7", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
 	if hwndMain == 0 {
 		return
 	}
@@ -725,13 +758,12 @@ func main() {
 	hwndDecimal = createWindow("EDIT", "", WS_CHILD|WS_VISIBLE|WS_BORDER|ES_CENTER|ES_READONLY, 125, 57, 300, 62, hwndMain, 0, instance)
 	hwndClock = createWindow("EDIT", "", WS_CHILD|WS_VISIBLE|WS_BORDER|ES_CENTER|ES_READONLY, 175, 128, 200, 38, hwndMain, 0, instance)
 	hwndStatus = createWindow("STATIC", "Stopped", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 177, 490, 28, hwndMain, 0, instance)
-	hwndStart = createWindow("BUTTON", "START", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 35, 215, 150, 52, hwndMain, ID_START, instance)
-	hwndPause = createWindow("BUTTON", "PAUSE", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 205, 215, 150, 52, hwndMain, ID_PAUSE, instance)
-	hwndStop = createWindow("BUTTON", "STOP", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 375, 215, 150, 52, hwndMain, ID_STOP, instance)
+	hwndStart = createWindow("BUTTON", "START", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 110, 215, 160, 52, hwndMain, ID_START, instance)
+	hwndStop = createWindow("BUTTON", "STOP", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 290, 215, 160, 52, hwndMain, ID_STOP, instance)
 	hwndStartup = createWindow("BUTTON", "Start automatically when Windows starts", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX, 115, 275, 330, 32, hwndMain, ID_STARTUP, instance)
 	lblIdle := createWindow("STATIC", "Idle detection: 5 minutes  |  Data stored locally", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 323, 490, 24, hwndMain, 0, instance)
 
-	for _, h := range []syscall.Handle{lblToday, hwndClock, hwndStatus, hwndStart, hwndPause, hwndStop, hwndStartup, lblIdle} {
+	for _, h := range []syscall.Handle{lblToday, hwndClock, hwndStatus, hwndStart, hwndStop, hwndStartup, lblIdle} {
 		setFont(h, normalFont)
 	}
 	setFont(hwndDecimal, bigFont)

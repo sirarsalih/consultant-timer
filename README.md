@@ -7,7 +7,10 @@ Consultant Timer is a lightweight, local-first Windows desktop application for s
 ### Time tracking
 
 - **START** begins tracking working time.
-- **PAUSE** pauses tracking without losing accumulated time.
+- **START** and **PAUSE** are combined into a single stateful button.
+- When the timer is stopped or paused, the button is the green **START** button.
+- When tracking is active, the same button becomes the yellow **PAUSE** button.
+- Clicking **PAUSE** manually pauses tracking without losing accumulated time.
 - **STOP** stops tracking and clears today's accumulated time.
 - Time continues accurately across multiple Start/Pause sessions during the same day.
 - Saved time survives closing the program and restarting Windows.
@@ -27,6 +30,11 @@ Both formats are displayed at the same time:
 - Automatically pauses the timer when the idle threshold is reached.
 - Removes the detected idle period instead of counting it as working time.
 - Displays that the timer was paused because of inactivity.
+- Detects new mouse or keyboard activity when the user returns.
+- Automatically resumes time tracking after returning from an automatic idle pause.
+- The main interface automatically returns to the **Running** state and the button changes to the yellow **PAUSE** button.
+- The system-tray state, tooltip, and menu automatically update when tracking resumes.
+- A manual **PAUSE** does **not** automatically resume when mouse or keyboard activity is detected; automatic resume only applies to idle-triggered pauses.
 
 ### Local and offline operation
 
@@ -50,10 +58,11 @@ Both formats are displayed at the same time:
 
 - Native, lightweight Windows desktop application.
 - Large and simple daily-time display.
-- **Green START** button.
-- **Yellow PAUSE** button.
+- Combined **START / PAUSE** button:
+  - Green **START** while stopped or paused.
+  - Yellow **PAUSE** while actively tracking.
 - **Red STOP** button.
-- Buttons automatically enable or disable depending on the current timer state.
+- The START/PAUSE button automatically changes its text and appearance depending on the current timer state.
 - Hand/pointer cursor when hovering over action buttons.
 - Displays the current state, such as **Running**, **Paused**, or **Stopped**.
 - Shows that idle detection is set to **5 minutes** and that data is stored locally.

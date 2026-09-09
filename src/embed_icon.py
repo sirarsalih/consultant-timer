@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 from pathlib import Path
 import struct, math
 
-OUT=Path('/mnt/data/ConsultantTimer_v6_1')
+OUT=Path('/mnt/data/ConsultantTimer_v7')
 sizes=[16,24,32,48,64,128,256]
 pngs=[]
 for sz in sizes:
