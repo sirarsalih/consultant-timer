@@ -78,6 +78,8 @@ Both formats are displayed at the same time:
   - **Exit**
 - Double-clicking the tray icon shows the main window.
 - The tray tooltip indicates the current timer state and time.
+- While time tracking is actively **Working**, the system-tray icon displays a prominent **red recording dot**.
+- The red recording dot disappears automatically when tracking is paused, stopped, or automatically paused because of inactivity, and returns when tracking resumes.
 
 ### Application icon
 
@@ -85,7 +87,11 @@ Both formats are displayed at the same time:
 - Embedded directly into the Windows executable.
 - Used as the `.exe` and desktop icon.
 - Used in the application title bar.
+- Used in the Windows taskbar.
 - Used in the system tray.
+- While the timer is actively **Working**, the taskbar/title-bar and system-tray icons display a large, round **red recording dot** with safe spacing from the icon edges.
+- The recording dot is state-driven: it appears only while working time is actively being recorded and disappears immediately when recording stops or pauses.
+- The `.exe` and desktop file icon remain the normal clock/timer icon without the recording dot.
 
 ## Technical details
 

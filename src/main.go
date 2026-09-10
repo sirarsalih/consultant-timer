@@ -207,6 +207,7 @@ var (
 	hwndStart, hwndStop, hwndStartup             syscall.Handle
 	normalFont, bigFont                          syscall.Handle
 	appIcon                                      syscall.Handle
+	recordingIcon                                syscall.Handle
 	appIconOwned                                 bool
 	trayData                                     NOTIFYICONDATA
 
@@ -385,6 +386,22 @@ func ensureDate(now time.Time) {
 	lastTick = now
 	updateDisplay()
 }
+func updateStatusIcons() {
+	icon := appIcon
+	if running && recordingIcon != 0 {
+		icon = recordingIcon
+	}
+	if hwndMain != 0 && icon != 0 {
+		procSendMessageW.Call(uintptr(hwndMain), WM_SETICON, ICON_BIG, uintptr(icon))
+		procSendMessageW.Call(uintptr(hwndMain), WM_SETICON, ICON_SMALL, uintptr(icon))
+	}
+	if trayData.HWnd != 0 && icon != 0 {
+		trayData.HIcon = icon
+		trayData.UFlags = NIF_ICON
+		procShellNotifyIconW.Call(NIM_MODIFY, uintptr(unsafe.Pointer(&trayData)))
+	}
+}
+
 func updateButtons() {
 	// START and PAUSE share one owner-drawn button. It stays enabled and
 	// changes text/color based on the current running state.
@@ -393,6 +410,7 @@ func updateButtons() {
 	if hwndStart != 0 {
 		procInvalidateRect.Call(uintptr(hwndStart), 0, 1)
 	}
+	updateStatusIcons()
 }
 func startTimer() {
 	if running {
@@ -727,13 +745,15 @@ func main() {
 	applyStartupPreference()
 	hInst, _, _ := procGetModuleHandleW.Call(0)
 	instance := syscall.Handle(hInst)
-	iconRes, _, _ := procLoadIconW.Call(uintptr(instance), 1) // embedded RT_GROUP_ICON #1
+	iconRes, _, _ := procLoadIconW.Call(uintptr(instance), 1) // normal embedded RT_GROUP_ICON #1
 	appIcon = syscall.Handle(iconRes)
 	if appIcon == 0 {
 		appIcon = createClockIcon()
 		appIconOwned = appIcon != 0
 	}
-	className := utf16("ConsultantTimerWindowV7")
+	recordingRes, _, _ := procLoadIconW.Call(uintptr(instance), 2) // recording-dot RT_GROUP_ICON #2
+	recordingIcon = syscall.Handle(recordingRes)
+	className := utf16("ConsultantTimerWindowV83")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: instance, HIcon: appIcon, HCursor: syscall.Handle(cursor), HbrBackground: syscall.Handle(COLOR_WINDOW + 1), LpszClassName: className, HIconSm: appIcon}
 	if r, _, _ := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
@@ -741,7 +761,7 @@ func main() {
 	}
 
 	style := uint32(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE)
-	hwndMain = createWindow("ConsultantTimerWindowV7", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
+	hwndMain = createWindow("ConsultantTimerWindowV83", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
 	if hwndMain == 0 {
 		return
 	}

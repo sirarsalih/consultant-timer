@@ -2,9 +2,10 @@ from PIL import Image, ImageDraw
 from pathlib import Path
 import struct, math
 
-OUT=Path('/mnt/data/ConsultantTimer_v7')
+OUT=Path('/mnt/data/ConsultantTimer_v8_3')
 sizes=[16,24,32,48,64,128,256]
 pngs=[]
+recording_pngs=[]
 for sz in sizes:
     im=Image.new('RGBA',(sz,sz),(0,0,0,0))
     d=ImageDraw.Draw(im)
@@ -18,28 +19,53 @@ for sz in sizes:
     d.line((cx,cy,cx,round(sz*0.28)), fill=(38,38,38,255), width=hand)
     # hour hand ~4 o'clock
     d.line((cx,cy,round(sz*0.70),round(sz*0.61)), fill=(38,38,38,255), width=hand)
-    dot=max(1,round(sz*0.045))
-    d.ellipse((cx-dot,cy-dot,cx+dot,cy+dot), fill=(38,38,38,255))
+    center_dot=max(1,round(sz*0.045))
+    d.ellipse((cx-center_dot,cy-center_dot,cx+center_dot,cy+center_dot), fill=(38,38,38,255))
     fp=OUT/f'icon_{sz}.png'
     im.save(fp, optimize=True)
     pngs.append((sz, fp.read_bytes()))
 
-# multi-size .ico for source package/reference
+    # Working/recording variant: red status dot at lower-right with a white rim.
+    rec=im.copy()
+    rd=ImageDraw.Draw(rec)
+    r=max(2, round(sz*0.165))
+    rim=max(1, round(sz*0.025))
+    rcx=sz-r-rim-max(1, round(sz*0.035))-1
+    rcy=sz-r-rim-max(1, round(sz*0.035))-1
+    rd.ellipse((rcx-r-rim, rcy-r-rim, rcx+r+rim, rcy+r+rim), fill=(255,255,255,255))
+    rd.ellipse((rcx-r, rcy-r, rcx+r, rcy+r), fill=(220,35,35,255))
+    rfp=OUT/f'icon_recording_{sz}.png'
+    rec.save(rfp, optimize=True)
+    recording_pngs.append((sz, rfp.read_bytes()))
+
+# multi-size .ico for source package/reference (normal desktop/file icon)
 base=Image.open(OUT/'icon_256.png')
 base.save(OUT/'ConsultantTimer.ico', format='ICO', sizes=[(s,s) for s in [16,24,32,48,64,128,256]])
 
 class DataRef:
     def __init__(self,data): self.data=data
 
-# resource tree: RT_ICON=3, RT_GROUP_ICON=14, group icon id=1, icon ids 1..N
-icon_type={i+1:{1033:DataRef(data)} for i,(sz,data) in enumerate(pngs)}
-# group icon resource
-entries=[]
+# Resource tree:
+#   RT_GROUP_ICON #1 = normal icon
+#   RT_GROUP_ICON #2 = Working icon with red recording dot
+# The normal icon remains the executable/Desktop icon.
+icon_type={}
 for i,(sz,data) in enumerate(pngs,1):
-    wh=0 if sz>=256 else sz
-    entries.append(struct.pack('<BBBBHHIH', wh, wh, 0, 0, 1, 32, len(data), i))
-grp=struct.pack('<HHH',0,1,len(entries))+b''.join(entries)
-group_type={1:{1033:DataRef(grp)}}
+    icon_type[i]={1033:DataRef(data)}
+for i,(sz,data) in enumerate(recording_pngs,8):
+    icon_type[i]={1033:DataRef(data)}
+
+def make_group(items, first_id):
+    entries=[]
+    for offset,(sz,data) in enumerate(items):
+        icon_id=first_id+offset
+        wh=0 if sz>=256 else sz
+        entries.append(struct.pack('<BBBBHHIH', wh, wh, 0, 0, 1, 32, len(data), icon_id))
+    return struct.pack('<HHH',0,1,len(entries))+b''.join(entries)
+
+grp_normal=make_group(pngs,1)
+grp_recording=make_group(recording_pngs,8)
+group_type={1:{1033:DataRef(grp_normal)}, 2:{1033:DataRef(grp_recording)}}
 root={3:icon_type,14:group_type}
 
 def align(v,a): return (v+a-1)//a*a
