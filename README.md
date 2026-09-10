@@ -89,8 +89,10 @@ Both formats are displayed at the same time:
 - Used in the application title bar.
 - Used in the Windows taskbar.
 - Used in the system tray.
-- While the timer is actively **Working**, the taskbar/title-bar and system-tray icons display a large, round **red recording dot** with safe spacing from the icon edges.
-- The recording dot is state-driven: it appears only while working time is actively being recorded and disappears immediately when recording stops or pauses.
+- While the timer is actively **Working**, the Windows taskbar icon displays a **red recording dot in the upper-right corner**.
+- While the timer is actively **Working**, the system-tray icon displays a **red recording dot in the lower-right corner**.
+- The recording indicators are state-driven: they appear only while working time is actively being recorded and disappear immediately when recording stops or pauses.
+- The recording indicators also disappear during an automatic idle pause and return automatically when tracking resumes after mouse or keyboard activity.
 - The `.exe` and desktop file icon remain the normal clock/timer icon without the recording dot.
 
 ## Technical details

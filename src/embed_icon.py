@@ -2,10 +2,11 @@ from PIL import Image, ImageDraw
 from pathlib import Path
 import struct, math
 
-OUT=Path('/mnt/data/ConsultantTimer_v8_3')
+OUT=Path('/mnt/data/ConsultantTimer_v8_5')
 sizes=[16,24,32,48,64,128,256]
 pngs=[]
 recording_pngs=[]
+overlay_pngs=[]
 for sz in sizes:
     im=Image.new('RGBA',(sz,sz),(0,0,0,0))
     d=ImageDraw.Draw(im)
@@ -38,6 +39,18 @@ for sz in sizes:
     rec.save(rfp, optimize=True)
     recording_pngs.append((sz, rfp.read_bytes()))
 
+    # Taskbar overlay resource: a standalone circular recording badge.
+    # Windows itself places/scales this badge over the bottom-right of the taskbar icon.
+    ov=Image.new('RGBA',(sz,sz),(0,0,0,0))
+    od=ImageDraw.Draw(ov)
+    edge=max(1, round(sz*0.06))
+    rim=max(1, round(sz*0.07))
+    od.ellipse((edge,edge,sz-edge-1,sz-edge-1), fill=(255,255,255,255))
+    od.ellipse((edge+rim,edge+rim,sz-edge-rim-1,sz-edge-rim-1), fill=(220,35,35,255))
+    ofp=OUT/f'icon_overlay_{sz}.png'
+    ov.save(ofp, optimize=True)
+    overlay_pngs.append((sz, ofp.read_bytes()))
+
 # multi-size .ico for source package/reference (normal desktop/file icon)
 base=Image.open(OUT/'icon_256.png')
 base.save(OUT/'ConsultantTimer.ico', format='ICO', sizes=[(s,s) for s in [16,24,32,48,64,128,256]])
@@ -47,12 +60,15 @@ class DataRef:
 
 # Resource tree:
 #   RT_GROUP_ICON #1 = normal icon
-#   RT_GROUP_ICON #2 = Working icon with red recording dot
+#   RT_GROUP_ICON #2 = Working icon with red recording dot (titlebar/tray)
+#   RT_GROUP_ICON #3 = standalone red-dot taskbar overlay
 # The normal icon remains the executable/Desktop icon.
 icon_type={}
 for i,(sz,data) in enumerate(pngs,1):
     icon_type[i]={1033:DataRef(data)}
 for i,(sz,data) in enumerate(recording_pngs,8):
+    icon_type[i]={1033:DataRef(data)}
+for i,(sz,data) in enumerate(overlay_pngs,15):
     icon_type[i]={1033:DataRef(data)}
 
 def make_group(items, first_id):
@@ -65,7 +81,8 @@ def make_group(items, first_id):
 
 grp_normal=make_group(pngs,1)
 grp_recording=make_group(recording_pngs,8)
-group_type={1:{1033:DataRef(grp_normal)}, 2:{1033:DataRef(grp_recording)}}
+grp_overlay=make_group(overlay_pngs,15)
+group_type={1:{1033:DataRef(grp_normal)}, 2:{1033:DataRef(grp_recording)}, 3:{1033:DataRef(grp_overlay)}}
 root={3:icon_type,14:group_type}
 
 def align(v,a): return (v+a-1)//a*a

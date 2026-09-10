@@ -66,6 +66,8 @@ const (
 	REG_SZ                      = 1
 	KEY_SET_VALUE               = 0x0002
 	HKEY_CURRENT_USER   uintptr = 0x80000001
+	CLSCTX_INPROC_SERVER         = 0x1
+	COINIT_APARTMENTTHREADED     = 0x2
 
 	NIM_ADD         = 0x00000000
 	NIM_MODIFY      = 0x00000001
@@ -94,6 +96,12 @@ type WNDCLASSEX struct {
 	HIconSm       syscall.Handle
 }
 
+type GUID struct {
+	Data1 uint32
+	Data2 uint16
+	Data3 uint16
+	Data4 [8]byte
+}
 type POINT struct{ X, Y int32 }
 type RECT struct{ Left, Top, Right, Bottom int32 }
 type MSG struct {
@@ -148,6 +156,7 @@ var (
 	gdi32    = syscall.NewLazyDLL("gdi32.dll")
 	shell32  = syscall.NewLazyDLL("shell32.dll")
 	advapi32 = syscall.NewLazyDLL("advapi32.dll")
+	ole32    = syscall.NewLazyDLL("ole32.dll")
 
 	procRegisterClassExW    = user32.NewProc("RegisterClassExW")
 	procCreateWindowExW     = user32.NewProc("CreateWindowExW")
@@ -197,6 +206,9 @@ var (
 	procGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	procGetTickCount64   = kernel32.NewProc("GetTickCount64")
 	procShellNotifyIconW = shell32.NewProc("Shell_NotifyIconW")
+	procCoInitializeEx     = ole32.NewProc("CoInitializeEx")
+	procCoUninitialize     = ole32.NewProc("CoUninitialize")
+	procCoCreateInstance   = ole32.NewProc("CoCreateInstance")
 
 	procRegOpenKeyExW   = advapi32.NewProc("RegOpenKeyExW")
 	procRegSetValueExW  = advapi32.NewProc("RegSetValueExW")
@@ -208,6 +220,8 @@ var (
 	normalFont, bigFont                          syscall.Handle
 	appIcon                                      syscall.Handle
 	recordingIcon                                syscall.Handle
+	taskbarOverlayIcon                            syscall.Handle
+	taskbarList                                   uintptr
 	appIconOwned                                 bool
 	trayData                                     NOTIFYICONDATA
 
@@ -386,20 +400,88 @@ func ensureDate(now time.Time) {
 	lastTick = now
 	updateDisplay()
 }
+func hresultFailed(hr uintptr) bool {
+	return int32(uint32(hr)) < 0
+}
+
+func initTaskbarList() {
+	// CLSID_TaskbarList = {56FDF344-FD6D-11D0-958A-006097C9A090}
+	clsid := GUID{Data1: 0x56FDF344, Data2: 0xFD6D, Data3: 0x11D0, Data4: [8]byte{0x95, 0x8A, 0x00, 0x60, 0x97, 0xC9, 0xA0, 0x90}}
+	// IID_ITaskbarList3 = {EA1AFB91-9E28-4B86-90E9-9E9F8A5EEFAF}
+	iid := GUID{Data1: 0xEA1AFB91, Data2: 0x9E28, Data3: 0x4B86, Data4: [8]byte{0x90, 0xE9, 0x9E, 0x9F, 0x8A, 0x5E, 0xEF, 0xAF}}
+
+	var obj uintptr
+	hr, _, _ := procCoCreateInstance.Call(
+		uintptr(unsafe.Pointer(&clsid)),
+		0,
+		CLSCTX_INPROC_SERVER,
+		uintptr(unsafe.Pointer(&iid)),
+		uintptr(unsafe.Pointer(&obj)),
+	)
+	if hresultFailed(hr) || obj == 0 {
+		return
+	}
+
+	vtbl := *(*uintptr)(unsafe.Pointer(obj))
+	hrInit := *(*uintptr)(unsafe.Pointer(vtbl + 3*unsafe.Sizeof(uintptr(0))))
+	hr, _, _ = syscall.SyscallN(hrInit, obj)
+	if hresultFailed(hr) {
+		release := *(*uintptr)(unsafe.Pointer(vtbl + 2*unsafe.Sizeof(uintptr(0))))
+		syscall.SyscallN(release, obj)
+		return
+	}
+	taskbarList = obj
+}
+
+func releaseTaskbarList() {
+	if taskbarList == 0 {
+		return
+	}
+	vtbl := *(*uintptr)(unsafe.Pointer(taskbarList))
+	release := *(*uintptr)(unsafe.Pointer(vtbl + 2*unsafe.Sizeof(uintptr(0))))
+	syscall.SyscallN(release, taskbarList)
+	taskbarList = 0
+}
+
+func updateTaskbarOverlay() {
+	if taskbarList == 0 || hwndMain == 0 {
+		return
+	}
+	var icon uintptr
+	var description *uint16
+	if running && taskbarOverlayIcon != 0 {
+		icon = uintptr(taskbarOverlayIcon)
+		description = utf16("Recording working time")
+	}
+	vtbl := *(*uintptr)(unsafe.Pointer(taskbarList))
+	// ITaskbarList3::SetOverlayIcon is vtable slot 18.
+	setOverlayIcon := *(*uintptr)(unsafe.Pointer(vtbl + 18*unsafe.Sizeof(uintptr(0))))
+	var desc uintptr
+	if description != nil {
+		desc = uintptr(unsafe.Pointer(description))
+	}
+	syscall.SyscallN(setOverlayIcon, taskbarList, uintptr(hwndMain), icon, desc)
+}
+
 func updateStatusIcons() {
-	icon := appIcon
+	// Keep the window/taskbar base icon clean. Windows' native taskbar
+	// overlay supplies the single recording dot while Working.
+	if hwndMain != 0 && appIcon != 0 {
+		procSendMessageW.Call(uintptr(hwndMain), WM_SETICON, ICON_BIG, uintptr(appIcon))
+		procSendMessageW.Call(uintptr(hwndMain), WM_SETICON, ICON_SMALL, uintptr(appIcon))
+	}
+
+	// The system tray still uses the recording variant while Working.
+	trayIcon := appIcon
 	if running && recordingIcon != 0 {
-		icon = recordingIcon
+		trayIcon = recordingIcon
 	}
-	if hwndMain != 0 && icon != 0 {
-		procSendMessageW.Call(uintptr(hwndMain), WM_SETICON, ICON_BIG, uintptr(icon))
-		procSendMessageW.Call(uintptr(hwndMain), WM_SETICON, ICON_SMALL, uintptr(icon))
-	}
-	if trayData.HWnd != 0 && icon != 0 {
-		trayData.HIcon = icon
+	if trayData.HWnd != 0 && trayIcon != 0 {
+		trayData.HIcon = trayIcon
 		trayData.UFlags = NIF_ICON
 		procShellNotifyIconW.Call(NIM_MODIFY, uintptr(unsafe.Pointer(&trayData)))
 	}
+	updateTaskbarOverlay()
 }
 
 func updateButtons() {
@@ -722,6 +804,7 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 		removeTrayIcon()
 	case WM_DESTROY:
 		procKillTimer.Call(uintptr(hwnd), TIMER_ID)
+		releaseTaskbarList()
 		removeTrayIcon()
 		if appIcon != 0 && appIconOwned {
 			procDestroyIcon.Call(uintptr(appIcon))
@@ -741,6 +824,12 @@ func main() {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	cohr, _, _ := procCoInitializeEx.Call(0, COINIT_APARTMENTTHREADED)
+	comInitialized := !hresultFailed(cohr)
+	if comInitialized {
+		defer procCoUninitialize.Call()
+	}
+
 	loadStore()
 	applyStartupPreference()
 	hInst, _, _ := procGetModuleHandleW.Call(0)
@@ -753,7 +842,9 @@ func main() {
 	}
 	recordingRes, _, _ := procLoadIconW.Call(uintptr(instance), 2) // recording-dot RT_GROUP_ICON #2
 	recordingIcon = syscall.Handle(recordingRes)
-	className := utf16("ConsultantTimerWindowV83")
+	overlayRes, _, _ := procLoadIconW.Call(uintptr(instance), 3) // taskbar red-dot overlay RT_GROUP_ICON #3
+	taskbarOverlayIcon = syscall.Handle(overlayRes)
+	className := utf16("ConsultantTimerWindowV85")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: instance, HIcon: appIcon, HCursor: syscall.Handle(cursor), HbrBackground: syscall.Handle(COLOR_WINDOW + 1), LpszClassName: className, HIconSm: appIcon}
 	if r, _, _ := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
@@ -761,7 +852,7 @@ func main() {
 	}
 
 	style := uint32(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE)
-	hwndMain = createWindow("ConsultantTimerWindowV83", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
+	hwndMain = createWindow("ConsultantTimerWindowV85", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
 	if hwndMain == 0 {
 		return
 	}
@@ -788,6 +879,10 @@ func main() {
 	}
 	setFont(hwndDecimal, bigFont)
 	setStartupCheckbox()
+
+	if comInitialized {
+		initTaskbarList()
+	}
 
 	// Use a hand pointer over all action buttons.
 	hand, _, _ := procLoadCursorW.Call(0, 32649) // IDC_HAND
