@@ -54,7 +54,7 @@ const (
 	ID_TRAY_SHOW                = 2004
 	ID_TRAY_EXIT                = 2005
 	TIMER_ID                    = 1
-	DEFAULT_IDLE_MINUTE         = 5
+	DEFAULT_IDLE_MINUTE         = 10
 	ODT_BUTTON                  = 4
 	ODS_DISABLED                = 0x0004
 	DT_CENTER                   = 0x00000001
@@ -844,7 +844,7 @@ func main() {
 	recordingIcon = syscall.Handle(recordingRes)
 	overlayRes, _, _ := procLoadIconW.Call(uintptr(instance), 3) // taskbar red-dot overlay RT_GROUP_ICON #3
 	taskbarOverlayIcon = syscall.Handle(overlayRes)
-	className := utf16("ConsultantTimerWindowV85")
+	className := utf16("ConsultantTimerWindowV86")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: instance, HIcon: appIcon, HCursor: syscall.Handle(cursor), HbrBackground: syscall.Handle(COLOR_WINDOW + 1), LpszClassName: className, HIconSm: appIcon}
 	if r, _, _ := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
@@ -852,7 +852,7 @@ func main() {
 	}
 
 	style := uint32(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE)
-	hwndMain = createWindow("ConsultantTimerWindowV85", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
+	hwndMain = createWindow("ConsultantTimerWindowV86", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
 	if hwndMain == 0 {
 		return
 	}
@@ -872,7 +872,7 @@ func main() {
 	hwndStart = createWindow("BUTTON", "START", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 110, 215, 160, 52, hwndMain, ID_START, instance)
 	hwndStop = createWindow("BUTTON", "STOP", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 290, 215, 160, 52, hwndMain, ID_STOP, instance)
 	hwndStartup = createWindow("BUTTON", "Start automatically when Windows starts", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX, 115, 275, 330, 32, hwndMain, ID_STARTUP, instance)
-	lblIdle := createWindow("STATIC", "Idle detection: 5 minutes  |  Data stored locally", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 323, 490, 24, hwndMain, 0, instance)
+	lblIdle := createWindow("STATIC", "Idle detection: 10 minutes  |  Data stored locally", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 323, 490, 24, hwndMain, 0, instance)
 
 	for _, h := range []syscall.Handle{lblToday, hwndClock, hwndStatus, hwndStart, hwndStop, hwndStartup, lblIdle} {
 		setFont(h, normalFont)

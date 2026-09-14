@@ -26,7 +26,7 @@ Both formats are displayed at the same time:
 
 ### Automatic idle detection
 
-- Detects **5 minutes of Windows inactivity**.
+- Detects **10 minutes of Windows inactivity**.
 - Automatically pauses the timer when the idle threshold is reached.
 - Removes the detected idle period instead of counting it as working time.
 - Displays that the timer was paused because of inactivity.
@@ -65,7 +65,7 @@ Both formats are displayed at the same time:
 - The START/PAUSE button automatically changes its text and appearance depending on the current timer state.
 - Hand/pointer cursor when hovering over action buttons.
 - Displays the current state, such as **Running**, **Paused**, or **Stopped**.
-- Shows that idle detection is set to **5 minutes** and that data is stored locally.
+- Shows that idle detection is set to **10 minutes** and that data is stored locally.
 
 ### System tray
 
