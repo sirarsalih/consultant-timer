@@ -33,6 +33,8 @@ const (
 	WM_TIMER                    = 0x0113
 	WM_SETFONT                  = 0x0030
 	WM_CLOSE                    = 0x0010
+	WM_QUERYENDSESSION          = 0x0011
+	WM_ENDSESSION               = 0x0016
 	WM_DRAWITEM                 = 0x002B
 	WM_SETICON                  = 0x0080
 	BM_GETCHECK                 = 0x00F0
@@ -578,6 +580,12 @@ func tick(now time.Time, checkIdle bool) {
 		}
 	}
 	updateDisplay()
+	// Persist continuously while Working so an unexpected Windows restart or
+	// power loss cannot discard the accumulated session. The app never persists
+	// the running state itself, so after restart it always comes back Paused.
+	if running {
+		saveStore()
+	}
 }
 func drawButton(dis *DRAWITEMSTRUCT) {
 	if dis == nil || dis.CtlType != ODT_BUTTON {
@@ -796,6 +804,23 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 			procSetForegroundWindow.Call(uintptr(hwndMain))
 			return 0
 		}
+	case WM_QUERYENDSESSION:
+		// Windows is preparing to log off, shut down, or restart. Capture the
+		// final fraction of the active session and persist it before allowing
+		// the session to end. Running state is intentionally not persisted.
+		if running {
+			tick(time.Now(), false)
+		}
+		saveStore()
+		return 1
+	case WM_ENDSESSION:
+		if wParam != 0 {
+			if running {
+				tick(time.Now(), false)
+			}
+			saveStore()
+		}
+		return 0
 	case WM_CLOSE:
 		if running {
 			tick(time.Now(), false)
@@ -844,7 +869,7 @@ func main() {
 	recordingIcon = syscall.Handle(recordingRes)
 	overlayRes, _, _ := procLoadIconW.Call(uintptr(instance), 3) // taskbar red-dot overlay RT_GROUP_ICON #3
 	taskbarOverlayIcon = syscall.Handle(overlayRes)
-	className := utf16("ConsultantTimerWindowV86")
+	className := utf16("ConsultantTimerWindowV87")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: instance, HIcon: appIcon, HCursor: syscall.Handle(cursor), HbrBackground: syscall.Handle(COLOR_WINDOW + 1), LpszClassName: className, HIconSm: appIcon}
 	if r, _, _ := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
@@ -852,7 +877,7 @@ func main() {
 	}
 
 	style := uint32(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE)
-	hwndMain = createWindow("ConsultantTimerWindowV86", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
+	hwndMain = createWindow("ConsultantTimerWindowV87", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
 	if hwndMain == 0 {
 		return
 	}

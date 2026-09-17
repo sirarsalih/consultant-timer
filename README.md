@@ -14,6 +14,9 @@ Consultant Timer is a lightweight, local-first Windows desktop application for s
 - **STOP** stops tracking and clears today's accumulated time.
 - Time continues accurately across multiple Start/Pause sessions during the same day.
 - Saved time survives closing the program and restarting Windows.
+- While tracking is active, accumulated time is saved locally so that recorded time is retained if Windows restarts, shuts down, or the PC unexpectedly loses power.
+- The running state itself is not persisted: after a restart, Consultant Timer opens **paused** with the previously accumulated time restored.
+- Tracking can then be resumed by clicking **START**, continuing from the restored accumulated time.
 - The timer always starts **paused** after reopening the application.
 
 ### Two simultaneous time formats
