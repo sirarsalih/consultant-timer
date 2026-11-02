@@ -149,7 +149,7 @@ type NOTIFYICONDATA struct {
 }
 type Store struct {
 	Days             map[string]float64 `json:"days"`
-	StartWithWindows *bool              `json:"start_with_windows,omitempty"`
+	WasRunning bool `json:"was_running"`
 }
 
 var (
@@ -218,7 +218,7 @@ var (
 	procRegCloseKey     = advapi32.NewProc("RegCloseKey")
 
 	hwndMain, hwndClock, hwndDecimal, hwndStatus syscall.Handle
-	hwndStart, hwndStop, hwndStartup             syscall.Handle
+	hwndStart, hwndStop             syscall.Handle
 	normalFont, bigFont                          syscall.Handle
 	appIcon                                      syscall.Handle
 	recordingIcon                                syscall.Handle
@@ -308,45 +308,9 @@ func setStartWithWindows(enabled bool) bool {
 	return r == 0
 }
 
+// Always register the current executable to launch when this user signs in.
 func applyStartupPreference() {
-	if store.StartWithWindows == nil {
-		v := true
-		store.StartWithWindows = &v
-		saveStore()
-	}
-	setStartWithWindows(*store.StartWithWindows)
-}
-
-func setStartupCheckbox() {
-	if hwndStartup == 0 || store.StartWithWindows == nil {
-		return
-	}
-	state := uintptr(BST_UNCHECKED)
-	if *store.StartWithWindows {
-		state = BST_CHECKED
-	}
-	procSendMessageW.Call(uintptr(hwndStartup), BM_SETCHECK, state, 0)
-}
-
-func toggleStartWithWindows() {
-	if hwndStartup == 0 {
-		return
-	}
-	state, _, _ := procSendMessageW.Call(uintptr(hwndStartup), BM_GETCHECK, 0, 0)
-	enabled := state == BST_CHECKED
-	if setStartWithWindows(enabled) {
-		store.StartWithWindows = &enabled
-		saveStore()
-		if enabled {
-			setText(hwndStatus, "Paused - starts with Windows")
-		} else {
-			setText(hwndStatus, "Paused - Windows startup disabled")
-		}
-	} else {
-		// Restore checkbox to the last saved preference on registry failure.
-		setStartupCheckbox()
-		setText(hwndStatus, "Could not change Windows startup setting")
-	}
+    setStartWithWindows(true)
 }
 
 func loadStore() {
@@ -361,6 +325,7 @@ func loadStore() {
 	currentSeconds = store.Days[currentDate]
 }
 func saveStore() {
+    store.WasRunning = running
 	if currentDate != "" {
 		store.Days[currentDate] = math.Max(0, currentSeconds)
 	}
@@ -506,6 +471,7 @@ func startTimer() {
 	lastTick = time.Now()
 	sessionAdded = 0
 	setText(hwndStatus, "Working")
+    saveStore()
 	updateButtons()
 	updateTrayTip()
 }
@@ -774,10 +740,7 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 		case ID_STOP, ID_TRAY_STOP:
 			stopAndClear()
 			return 0
-		case ID_STARTUP:
-			toggleStartWithWindows()
-			return 0
-		case ID_TRAY_SHOW:
+				case ID_TRAY_SHOW:
 			procShowWindow.Call(uintptr(hwndMain), SW_SHOW)
 			procSetForegroundWindow.Call(uintptr(hwndMain))
 			return 0
@@ -856,6 +819,7 @@ func main() {
 	}
 
 	loadStore()
+    resumeOnLaunch := store.WasRunning
 	applyStartupPreference()
 	hInst, _, _ := procGetModuleHandleW.Call(0)
 	instance := syscall.Handle(hInst)
@@ -869,7 +833,7 @@ func main() {
 	recordingIcon = syscall.Handle(recordingRes)
 	overlayRes, _, _ := procLoadIconW.Call(uintptr(instance), 3) // taskbar red-dot overlay RT_GROUP_ICON #3
 	taskbarOverlayIcon = syscall.Handle(overlayRes)
-	className := utf16("ConsultantTimerWindowV87")
+	className := utf16("ConsultantTimerWindowV89")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: instance, HIcon: appIcon, HCursor: syscall.Handle(cursor), HbrBackground: syscall.Handle(COLOR_WINDOW + 1), LpszClassName: className, HIconSm: appIcon}
 	if r, _, _ := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
@@ -877,7 +841,7 @@ func main() {
 	}
 
 	style := uint32(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE)
-	hwndMain = createWindow("ConsultantTimerWindowV87", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 430, 0, 0, instance)
+	hwndMain = createWindow("ConsultantTimerWindowV89", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 365, 0, 0, instance)
 	if hwndMain == 0 {
 		return
 	}
@@ -896,14 +860,12 @@ func main() {
 	hwndStatus = createWindow("STATIC", "Stopped", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 177, 490, 28, hwndMain, 0, instance)
 	hwndStart = createWindow("BUTTON", "START", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 110, 215, 160, 52, hwndMain, ID_START, instance)
 	hwndStop = createWindow("BUTTON", "STOP", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 290, 215, 160, 52, hwndMain, ID_STOP, instance)
-	hwndStartup = createWindow("BUTTON", "Start automatically when Windows starts", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX, 115, 275, 330, 32, hwndMain, ID_STARTUP, instance)
-	lblIdle := createWindow("STATIC", "Idle detection: 10 minutes  |  Data stored locally", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 323, 490, 24, hwndMain, 0, instance)
+	lblIdle := createWindow("STATIC", "Idle detection: 10 minutes  |  Data stored locally", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 283, 490, 24, hwndMain, 0, instance)
 
-	for _, h := range []syscall.Handle{lblToday, hwndClock, hwndStatus, hwndStart, hwndStop, hwndStartup, lblIdle} {
+	for _, h := range []syscall.Handle{lblToday, hwndClock, hwndStatus, hwndStart, hwndStop, lblIdle} {
 		setFont(h, normalFont)
 	}
 	setFont(hwndDecimal, bigFont)
-	setStartupCheckbox()
 
 	if comInitialized {
 		initTaskbarList()
@@ -916,9 +878,16 @@ func main() {
 	}
 	updateButtons()
 	updateDisplay()
-	if currentSeconds > 0 {
-		setText(hwndStatus, "Paused")
-	}
+	if resumeOnLaunch {
+        running = true
+        lastTick = time.Now()
+        sessionAdded = 0
+        autoIdlePaused = false
+        setText(hwndStatus, "Working - resumed after Windows restart")
+        updateButtons()
+    } else if currentSeconds > 0 {
+        setText(hwndStatus, "Paused")
+    }
 
 	addTrayIcon()
 	procSetTimer.Call(uintptr(hwndMain), TIMER_ID, 1000, 0)

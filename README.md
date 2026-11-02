@@ -15,9 +15,9 @@ Consultant Timer is a lightweight, local-first Windows desktop application for s
 - Time continues accurately across multiple Start/Pause sessions during the same day.
 - Saved time survives closing the program and restarting Windows.
 - While tracking is active, accumulated time is saved locally so that recorded time is retained if Windows restarts, shuts down, or the PC unexpectedly loses power.
-- The running state itself is not persisted: after a restart, Consultant Timer opens **paused** with the previously accumulated time restored.
-- Tracking can then be resumed by clicking **START**, continuing from the restored accumulated time.
-- The timer always starts **paused** after reopening the application.
+- The timer state is saved locally: if tracking was **Working** before Windows restarted, the app resumes **Working** after sign-in; if it was **Paused**, it stays **Paused**.
+- Previously accumulated time is restored without adding time while Windows was shut down.
+- The timer also restores its last saved state when the application is reopened.
 
 ### Two simultaneous time formats
 
@@ -50,12 +50,12 @@ Both formats are displayed at the same time:
 
 ### Start with Windows
 
-- Includes a **“Start automatically when Windows starts”** checkbox.
-- Checkbox and text are centered in the interface.
-- Automatic startup can be enabled or disabled directly from Consultant Timer.
-- Uses the current Windows user's startup configuration.
-- When Windows starts, Consultant Timer launches **paused** rather than automatically counting time.
-- The startup preference is remembered.
+- Consultant Timer automatically launches when the current Windows user signs in.
+- No startup checkbox or manual startup setting is displayed in the interface.
+- The application registers its executable path in the current user's Windows startup configuration.
+- On launch, it restores the last saved timer state (**Working** or **Paused**) and accumulated time.
+- Time while the PC was shut down is not counted.
+- Run the executable once from its intended permanent location to register that path for Windows startup.
 
 ### Windows interface
 
