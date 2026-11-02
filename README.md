@@ -51,9 +51,8 @@ Both formats are displayed at the same time:
 ### Start with Windows
 
 - Consultant Timer automatically launches when the current Windows user signs in.
-- No startup checkbox or manual startup setting is displayed in the interface.
 - The application registers its executable path in the current user's Windows startup configuration.
-- On launch, it restores the last saved timer state (**Working** or **Paused**) and accumulated time.
+- On launch, it restores the last saved timer state and accumulated time.
 - Time while the PC was shut down is not counted.
 - Run the executable once from its intended permanent location to register that path for Windows startup.
 
