@@ -13,63 +13,63 @@ import (
 )
 
 const (
-	WS_OVERLAPPED               = 0x00000000
-	WS_CAPTION                  = 0x00C00000
-	WS_SYSMENU                  = 0x00080000
-	WS_MINIMIZEBOX              = 0x00020000
-	WS_VISIBLE                  = 0x10000000
-	WS_CHILD                    = 0x40000000
-	WS_TABSTOP                  = 0x00010000
-	WS_BORDER                   = 0x00800000
-	BS_OWNERDRAW                = 0x0000000B
-	BS_AUTOCHECKBOX             = 0x00000003
-	SS_CENTER                   = 0x00000001
-	ES_CENTER                   = 0x00000001
-	ES_READONLY                 = 0x00000800
-	SW_SHOW                     = 5
-	CW_USEDEFAULT       int32   = -2147483648
-	WM_DESTROY                  = 0x0002
-	WM_COMMAND                  = 0x0111
-	WM_TIMER                    = 0x0113
-	WM_SETFONT                  = 0x0030
-	WM_CLOSE                    = 0x0010
-	WM_QUERYENDSESSION          = 0x0011
-	WM_ENDSESSION               = 0x0016
-	WM_DRAWITEM                 = 0x002B
-	WM_SETICON                  = 0x0080
-	BM_GETCHECK                 = 0x00F0
-	BM_SETCHECK                 = 0x00F1
-	WM_RBUTTONUP                = 0x0205
-	WM_LBUTTONDBLCLK            = 0x0203
-	WM_APP                      = 0x8000
-	WM_TRAYICON                 = WM_APP + 1
-	ICON_SMALL                  = 0
-	ICON_BIG                    = 1
-	COLOR_WINDOW                = 5
-	ID_START                    = 1001
-	ID_PAUSE                    = 1002
-	ID_STOP                     = 1003
-	ID_STARTUP                  = 1004
-	ID_TRAY_START               = 2001
-	ID_TRAY_PAUSE               = 2002
-	ID_TRAY_STOP                = 2003
-	ID_TRAY_SHOW                = 2004
-	ID_TRAY_EXIT                = 2005
-	TIMER_ID                    = 1
-	DEFAULT_IDLE_MINUTE         = 10
-	ODT_BUTTON                  = 4
-	ODS_DISABLED                = 0x0004
-	DT_CENTER                   = 0x00000001
-	DT_VCENTER                  = 0x00000004
-	DT_SINGLELINE               = 0x00000020
-	TRANSPARENT                 = 1
-	BST_UNCHECKED               = 0
-	BST_CHECKED                 = 1
-	REG_SZ                      = 1
-	KEY_SET_VALUE               = 0x0002
-	HKEY_CURRENT_USER   uintptr = 0x80000001
-	CLSCTX_INPROC_SERVER         = 0x1
-	COINIT_APARTMENTTHREADED     = 0x2
+	WS_OVERLAPPED                    = 0x00000000
+	WS_CAPTION                       = 0x00C00000
+	WS_SYSMENU                       = 0x00080000
+	WS_MINIMIZEBOX                   = 0x00020000
+	WS_VISIBLE                       = 0x10000000
+	WS_CHILD                         = 0x40000000
+	WS_TABSTOP                       = 0x00010000
+	WS_BORDER                        = 0x00800000
+	BS_OWNERDRAW                     = 0x0000000B
+	BS_AUTOCHECKBOX                  = 0x00000003
+	SS_CENTER                        = 0x00000001
+	ES_CENTER                        = 0x00000001
+	ES_READONLY                      = 0x00000800
+	SW_SHOW                          = 5
+	CW_USEDEFAULT            int32   = -2147483648
+	WM_DESTROY                       = 0x0002
+	WM_COMMAND                       = 0x0111
+	WM_TIMER                         = 0x0113
+	WM_SETFONT                       = 0x0030
+	WM_CLOSE                         = 0x0010
+	WM_QUERYENDSESSION               = 0x0011
+	WM_ENDSESSION                    = 0x0016
+	WM_DRAWITEM                      = 0x002B
+	WM_SETICON                       = 0x0080
+	BM_GETCHECK                      = 0x00F0
+	BM_SETCHECK                      = 0x00F1
+	WM_RBUTTONUP                     = 0x0205
+	WM_LBUTTONDBLCLK                 = 0x0203
+	WM_APP                           = 0x8000
+	WM_TRAYICON                      = WM_APP + 1
+	ICON_SMALL                       = 0
+	ICON_BIG                         = 1
+	COLOR_WINDOW                     = 5
+	ID_START                         = 1001
+	ID_PAUSE                         = 1002
+	ID_STOP                          = 1003
+	ID_STARTUP                       = 1004
+	ID_TRAY_START                    = 2001
+	ID_TRAY_PAUSE                    = 2002
+	ID_TRAY_STOP                     = 2003
+	ID_TRAY_SHOW                     = 2004
+	ID_TRAY_EXIT                     = 2005
+	TIMER_ID                         = 1
+	DEFAULT_IDLE_MINUTE              = 10
+	ODT_BUTTON                       = 4
+	ODS_DISABLED                     = 0x0004
+	DT_CENTER                        = 0x00000001
+	DT_VCENTER                       = 0x00000004
+	DT_SINGLELINE                    = 0x00000020
+	TRANSPARENT                      = 1
+	BST_UNCHECKED                    = 0
+	BST_CHECKED                      = 1
+	REG_SZ                           = 1
+	KEY_SET_VALUE                    = 0x0002
+	HKEY_CURRENT_USER        uintptr = 0x80000001
+	CLSCTX_INPROC_SERVER             = 0x1
+	COINIT_APARTMENTTHREADED         = 0x2
 
 	NIM_ADD         = 0x00000000
 	NIM_MODIFY      = 0x00000001
@@ -148,8 +148,8 @@ type NOTIFYICONDATA struct {
 	HBalloonIcon      syscall.Handle
 }
 type Store struct {
-	Days             map[string]float64 `json:"days"`
-	WasRunning bool `json:"was_running"`
+	Days       map[string]float64 `json:"days"`
+	WasRunning bool               `json:"was_running"`
 }
 
 var (
@@ -208,22 +208,22 @@ var (
 	procGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	procGetTickCount64   = kernel32.NewProc("GetTickCount64")
 	procShellNotifyIconW = shell32.NewProc("Shell_NotifyIconW")
-	procCoInitializeEx     = ole32.NewProc("CoInitializeEx")
-	procCoUninitialize     = ole32.NewProc("CoUninitialize")
-	procCoCreateInstance   = ole32.NewProc("CoCreateInstance")
+	procCoInitializeEx   = ole32.NewProc("CoInitializeEx")
+	procCoUninitialize   = ole32.NewProc("CoUninitialize")
+	procCoCreateInstance = ole32.NewProc("CoCreateInstance")
 
 	procRegOpenKeyExW   = advapi32.NewProc("RegOpenKeyExW")
 	procRegSetValueExW  = advapi32.NewProc("RegSetValueExW")
 	procRegDeleteValueW = advapi32.NewProc("RegDeleteValueW")
 	procRegCloseKey     = advapi32.NewProc("RegCloseKey")
 
-	hwndMain, hwndClock, hwndDecimal, hwndStatus syscall.Handle
-	hwndStart, hwndStop             syscall.Handle
+	hwndMain, hwndClock, hwndDecimal, hwndStatus, hwndDate syscall.Handle
+	hwndStart, hwndStop                          syscall.Handle
 	normalFont, bigFont                          syscall.Handle
 	appIcon                                      syscall.Handle
 	recordingIcon                                syscall.Handle
-	taskbarOverlayIcon                            syscall.Handle
-	taskbarList                                   uintptr
+	taskbarOverlayIcon                           syscall.Handle
+	taskbarList                                  uintptr
 	appIconOwned                                 bool
 	trayData                                     NOTIFYICONDATA
 
@@ -310,7 +310,7 @@ func setStartWithWindows(enabled bool) bool {
 
 // Always register the current executable to launch when this user signs in.
 func applyStartupPreference() {
-    setStartWithWindows(true)
+	setStartWithWindows(true)
 }
 
 func loadStore() {
@@ -325,7 +325,7 @@ func loadStore() {
 	currentSeconds = store.Days[currentDate]
 }
 func saveStore() {
-    store.WasRunning = running
+	store.WasRunning = running
 	if currentDate != "" {
 		store.Days[currentDate] = math.Max(0, currentSeconds)
 	}
@@ -362,6 +362,7 @@ func ensureDate(now time.Time) {
 	}
 	saveStore()
 	currentDate = k
+	setText(hwndDate, now.Format("02.01.2006"))
 	currentSeconds = store.Days[k]
 	sessionAdded = 0
 	lastTick = now
@@ -430,6 +431,13 @@ func updateTaskbarOverlay() {
 	syscall.SyscallN(setOverlayIcon, taskbarList, uintptr(hwndMain), icon, desc)
 }
 
+func currentTrayIcon() syscall.Handle {
+	if running && recordingIcon != 0 {
+		return recordingIcon
+	}
+	return appIcon
+}
+
 func updateStatusIcons() {
 	// Keep the window/taskbar base icon clean. Windows' native taskbar
 	// overlay supplies the single recording dot while Working.
@@ -439,10 +447,7 @@ func updateStatusIcons() {
 	}
 
 	// The system tray still uses the recording variant while Working.
-	trayIcon := appIcon
-	if running && recordingIcon != 0 {
-		trayIcon = recordingIcon
-	}
+	trayIcon := currentTrayIcon()
 	if trayData.HWnd != 0 && trayIcon != 0 {
 		trayData.HIcon = trayIcon
 		trayData.UFlags = NIF_ICON
@@ -471,7 +476,7 @@ func startTimer() {
 	lastTick = time.Now()
 	sessionAdded = 0
 	setText(hwndStatus, "Working")
-    saveStore()
+	saveStore()
 	updateButtons()
 	updateTrayTip()
 }
@@ -653,6 +658,8 @@ func copyUTF16(dst []uint16, s string) {
 	copy(dst, u)
 }
 
+var trayRegistered bool
+
 func addTrayIcon() {
 	if hwndMain == 0 || appIcon == 0 {
 		return
@@ -663,30 +670,42 @@ func addTrayIcon() {
 	trayData.UID = 1
 	trayData.UFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
 	trayData.UCallbackMessage = WM_TRAYICON
-	trayData.HIcon = appIcon
-	copyUTF16(trayData.SzTip[:], "Consultant Timer")
-	procShellNotifyIconW.Call(NIM_ADD, uintptr(unsafe.Pointer(&trayData)))
-	updateTrayTip()
+	trayData.HIcon = currentTrayIcon()
+	copyUTF16(trayData.SzTip[:], trayTooltip())
+	ok, _, _ := procShellNotifyIconW.Call(NIM_ADD, uintptr(unsafe.Pointer(&trayData)))
+	trayRegistered = ok != 0
 }
 func removeTrayIcon() {
 	if trayData.HWnd != 0 {
 		procShellNotifyIconW.Call(NIM_DELETE, uintptr(unsafe.Pointer(&trayData)))
 	}
 }
-func updateTrayTip() {
-	if trayData.HWnd == 0 {
-		return
-	}
+func trayTooltip() string {
 	status := "Paused"
 	if running {
 		status = "Working"
 	} else if currentSeconds <= 0 {
 		status = "Stopped"
 	}
-	tip := fmt.Sprintf("Consultant Timer - %s - %.2f h (%s)", status, currentSeconds/3600.0, formatHHMM(currentSeconds))
-	trayData.UFlags = NIF_TIP
+	return fmt.Sprintf("Consultant Timer - %s - %s - %.2f h (%s)", status, time.Now().Format("02.01.2006"), currentSeconds/3600.0, formatHHMM(currentSeconds))
+}
+func updateTrayTip() {
+	if trayData.HWnd == 0 {
+		return
+	}
+	tip := trayTooltip()
+	if !trayRegistered {
+		addTrayIcon()
+		return
+	}
+	trayData.UFlags = NIF_TIP | NIF_ICON
+	trayData.HIcon = currentTrayIcon()
 	copyUTF16(trayData.SzTip[:], tip)
-	procShellNotifyIconW.Call(NIM_MODIFY, uintptr(unsafe.Pointer(&trayData)))
+	ok, _, _ := procShellNotifyIconW.Call(NIM_MODIFY, uintptr(unsafe.Pointer(&trayData)))
+	if ok == 0 {
+		trayRegistered = false
+		addTrayIcon()
+	}
 }
 func showTrayMenu() {
 	menu, _, _ := procCreatePopupMenu.Call()
@@ -740,7 +759,7 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 		case ID_STOP, ID_TRAY_STOP:
 			stopAndClear()
 			return 0
-				case ID_TRAY_SHOW:
+		case ID_TRAY_SHOW:
 			procShowWindow.Call(uintptr(hwndMain), SW_SHOW)
 			procSetForegroundWindow.Call(uintptr(hwndMain))
 			return 0
@@ -751,6 +770,9 @@ func wndProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	case WM_TIMER:
 		if wParam == TIMER_ID {
 			tick(time.Now(), true)
+			if !running {
+				updateTrayTip()
+			}
 			return 0
 		}
 	case WM_DRAWITEM:
@@ -819,7 +841,7 @@ func main() {
 	}
 
 	loadStore()
-    resumeOnLaunch := store.WasRunning
+	resumeOnLaunch := store.WasRunning
 	applyStartupPreference()
 	hInst, _, _ := procGetModuleHandleW.Call(0)
 	instance := syscall.Handle(hInst)
@@ -833,7 +855,7 @@ func main() {
 	recordingIcon = syscall.Handle(recordingRes)
 	overlayRes, _, _ := procLoadIconW.Call(uintptr(instance), 3) // taskbar red-dot overlay RT_GROUP_ICON #3
 	taskbarOverlayIcon = syscall.Handle(overlayRes)
-	className := utf16("ConsultantTimerWindowV89")
+	className := utf16("ConsultantTimerWindowV811")
 	cursor, _, _ := procLoadCursorW.Call(0, 32512)
 	wc := WNDCLASSEX{CbSize: uint32(unsafe.Sizeof(WNDCLASSEX{})), LpfnWndProc: syscall.NewCallback(wndProc), HInstance: instance, HIcon: appIcon, HCursor: syscall.Handle(cursor), HbrBackground: syscall.Handle(COLOR_WINDOW + 1), LpszClassName: className, HIconSm: appIcon}
 	if r, _, _ := procRegisterClassExW.Call(uintptr(unsafe.Pointer(&wc))); r == 0 {
@@ -841,7 +863,7 @@ func main() {
 	}
 
 	style := uint32(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE)
-	hwndMain = createWindow("ConsultantTimerWindowV89", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 365, 0, 0, instance)
+	hwndMain = createWindow("ConsultantTimerWindowV811", "Consultant Timer", style, CW_USEDEFAULT, CW_USEDEFAULT, 560, 365, 0, 0, instance)
 	if hwndMain == 0 {
 		return
 	}
@@ -853,7 +875,7 @@ func main() {
 	normalFont = createFont(20, 500)
 	bigFont = createFont(52, 600)
 
-	lblToday := createWindow("STATIC", "TODAY", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 20, 490, 28, hwndMain, 0, instance)
+	hwndDate = createWindow("STATIC", time.Now().Format("02.01.2006"), WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 20, 490, 28, hwndMain, 0, instance)
 	// Decimal hours first, then hh:mm underneath.
 	hwndDecimal = createWindow("EDIT", "", WS_CHILD|WS_VISIBLE|WS_BORDER|ES_CENTER|ES_READONLY, 125, 57, 300, 62, hwndMain, 0, instance)
 	hwndClock = createWindow("EDIT", "", WS_CHILD|WS_VISIBLE|WS_BORDER|ES_CENTER|ES_READONLY, 175, 128, 200, 38, hwndMain, 0, instance)
@@ -862,7 +884,7 @@ func main() {
 	hwndStop = createWindow("BUTTON", "STOP", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_OWNERDRAW, 290, 215, 160, 52, hwndMain, ID_STOP, instance)
 	lblIdle := createWindow("STATIC", "Idle detection: 10 minutes  |  Data stored locally", WS_CHILD|WS_VISIBLE|SS_CENTER, 30, 283, 490, 24, hwndMain, 0, instance)
 
-	for _, h := range []syscall.Handle{lblToday, hwndClock, hwndStatus, hwndStart, hwndStop, lblIdle} {
+	for _, h := range []syscall.Handle{hwndDate, hwndClock, hwndStatus, hwndStart, hwndStop, lblIdle} {
 		setFont(h, normalFont)
 	}
 	setFont(hwndDecimal, bigFont)
@@ -879,15 +901,15 @@ func main() {
 	updateButtons()
 	updateDisplay()
 	if resumeOnLaunch {
-        running = true
-        lastTick = time.Now()
-        sessionAdded = 0
-        autoIdlePaused = false
-        setText(hwndStatus, "Working - resumed after Windows restart")
-        updateButtons()
-    } else if currentSeconds > 0 {
-        setText(hwndStatus, "Paused")
-    }
+		running = true
+		lastTick = time.Now()
+		sessionAdded = 0
+		autoIdlePaused = false
+		setText(hwndStatus, "Working - resumed after Windows restart")
+		updateButtons()
+	} else if currentSeconds > 0 {
+		setText(hwndStatus, "Paused")
+	}
 
 	addTrayIcon()
 	procSetTimer.Call(uintptr(hwndMain), TIMER_ID, 1000, 0)
